@@ -1,0 +1,6 @@
+#!/usr/bin/env dsb-script
+#
+#   Run 'ruby' command in a container and handle its STDOUT/STDERR in host environment.
+
+dsb_resolve_files rb
+dsb_run_as_user "@RUBY" ruby "$@"

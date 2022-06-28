@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+#
+#  Main dsb subcommands
+
+set -e
+
+DSBLIB_TEMP="$( declare -F )"
+if [ -n "$DSBLIB_TEMP" ]; then
+    DSBLIB_TEMP_EOL=$'\n'
+    DSBLIB_TEMP_LINE=
+    while [ "$DSBLIB_TEMP_LINE" != "$DSBLIB_TEMP" ]; do
+        DSBLIB_TEMP_LINE="${DSBLIB_TEMP%%${DSBLIB_TEMP_EOL}*}"
+        DSBLIB_TEMP="${DSBLIB_TEMP#*${DSBLIB_TEMP_EOL}}"
+        unset "${DSBLIB_TEMP_LINE##* }"
+    done
+fi
+
+# Include common functions and variables:
+case "$OSTYPE" in
+    linux* )
+        if ! hash readlink 2>/dev/null ; then
+            echo -e "${0##*/}: Сommand 'readlink' not found - EXECUTION ABORTED" 1>&2
+            exit 100
+        fi
+        DSBLIB_TEMP="$( readlink -f "${BASH_SOURCE[0]}" )"
+        ;;
+    darwin*  ) # OSX
+        if ! hash greadlink 2>/dev/null ; then
+            echo -e "${0##*/}: Сommand 'greadlink' not found\nPlease install GNU coreutils package (brew install coreutils)\nEXECUTION ABORTED" 1>&2
+            exit 100
+        fi
+        DSBLIB_TEMP="$( greadlink -f "${BASH_SOURCE[0]}" )"
+        ;;
+    bsd* ) # BSD
+        if ! hash greadlink 2>/dev/null ; then
+            echo -e "${0##*/}: Сommand 'greadlink' not found\nPlease install GNU coreutils package (pkg install coreutils)\nEXECUTION ABORTED" 1>&2
+            exit 100
+        fi
+        DSBLIB_TEMP="$( greadlink -f "${BASH_SOURCE[0]}" )"
+        ;;
+    # solaris* ) # SOLARIS
+    # msys* | cygwin* ) # WINDOWS
+    *)
+        echo -e "${0##*/}: Unsupported OS Type: $OSTYPE - EXECUTION ABORTED" 1>&2
+        exit 100
+        ;;
+esac
+DSBLIB_TEMP="${DSBLIB_TEMP%/*}"
+. "${DSBLIB_TEMP%/*}/lib/dsblib.bash"
+
+if [ -z "$DSBLIB_LIB_OK" ]; then
+    echo -e "${0##*/}: dsblib.bash is not active - EXECUTION ABORTED" 1>&2
+    exit 100
+fi
+
+declare -r DSBLIB_DSBARG="$1"
+declare -r DSBLIB_DSBCMD="$DSBLIB_BINCMD $DSBLIB_DSBARG"
+
+function my_usage()
+{
+    dsblib_yellow_message '
+Usage:
+  dsb cid  SERVICE_NAME
+  dsb ( clean | clean-home | clean-logs | clean-storage ) [ SERVICE_NAME ]
+  dsb clean-vols COMPOSE_VOLUME
+  dsb compose  ...PARAMETERS
+  dsb down [ SERVICE_NAME ]
+  dsb down-all
+  dsb init [ COMPOSE_FILE_VERSION ]
+  dsb ip     SERVICE_NAME
+  dsb logs   SERVICE_NAME
+  dsb ps   [ SERVICE_NAME ]
+  dsb restart [ SERVICE_NAME ]
+  dsb root  SERVICE_NAME [ COMMAND [ ...PARAMETERS ] ]
+  dsb sh    SERVICE_NAME [ COMMAND [ ...PARAMETERS ] ]
+  dsb scale SERVICE_NAME  REPLICAS
+  dsb start [ SERVICE_NAME ]
+  dsb stop  [ SERVICE_NAME ]
+  dsb var   [ VARIABLE_NAME ]
+  dsb vols     [ COMPOSE_VOLUME ]
+  dsb yaml  SERVICE_NAME [ DOCKER_IMAGE ] [ --sleep | --cmd  ] [ --initd ] [ --build ]
+'
+    if [ "$( env dsb-script -c 'echo OK' )" != "OK" ]; then
+        dsblib_red_message "WARNING: The 'dsb-script' command is not available for the 'env' command.\nA possible reason is the use of the tilde character in the value of the PATH variable."
+        exit 1
+    fi
+}
+
+shift   # skip DSBLIB_DSBARG
+
+case "$DSBLIB_DSBARG" in
+    cid | compose | down | down-all | init | ip | logs | ps | restart | root | scale | sh | start | stop | var | vols | clean-vols | yaml )
+        ;;
+    clean | clean-logs | clean-storage | clean-home )
+        . "$DSBLIB_LIB/dsb/clean.bash"
+        exit "$?"
+        ;;
+    "" | help )
+        my_usage
+        exit 0
+        ;;
+    * )
+        . "$DSBLIB_LIB/dsb/bin.bash"
+        exit "$?"
+        ;;
+esac
+
+. "$DSBLIB_LIB/dsb/$DSBLIB_DSBARG.bash"

@@ -1,0 +1,3 @@
+#!/usr/bin/env dsb-script
+dsb_resolve_files
+dsb_run_as_user "@MONGO" mongodump "$@"
