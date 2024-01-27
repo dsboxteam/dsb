@@ -1,0 +1,3 @@
+#!/usr/bin/env dsb-script
+dsb_resolve_files lua
+dsb_run_as_user "@REDIS" redis-cli "$@"

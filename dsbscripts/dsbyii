@@ -1,0 +1,42 @@
+#!/usr/bin/env dsb-script
+#
+#  Run 'yii' command in PHP container and handle its STDOUT/STDERR in host environment.
+
+dsb_get_container_id  "@PHP"  # get $DSB_OUT_CONTAINER_SERVICE
+
+declare    MYINLINESCRIPT='
+if [ ! -f yii ]; then
+    echo "'$DSB_SCRIPT_NAME': '$DSB_OUT_CONTAINER_SERVICE': File '"'"'yii'"'"' not found in the container directory $PWD" 1>&2
+    exit 1
+elif ! hash php 2>/dev/null ; then
+    echo "'$DSB_SCRIPT_NAME': '$DSB_OUT_CONTAINER_SERVICE': '"'"'php'"'"' not found in the container" 1>&2
+    exit 127
+elif [ -x yii ]; then
+    exec ./yii "$@"
+fi
+exec php yii "$@"
+'
+
+if [ -n "$XDEBUG_CONFIG" ]; then
+    MYINLINESCRIPT="export XDEBUG_CONFIG=${XDEBUG_CONFIG@Q} ; ${MYINLINESCRIPT}"
+elif [ "${XDEBUG_CONFIG-$DSBLIB_NOTSET}" != "$DSBLIB_NOTSET" ]; then
+    MYINLINESCRIPT="unset XDEBUG_CONFIG ; ${MYINLINESCRIPT}"
+fi
+if [ -n "$XDEBUG_TRIGGER" ]; then
+    MYINLINESCRIPT="export XDEBUG_TRIGGER=${XDEBUG_TRIGGER@Q} ; ${MYINLINESCRIPT}"
+elif [ "${XDEBUG_TRIGGER-$DSBLIB_NOTSET}" != "$DSBLIB_NOTSET" ]; then
+    MYINLINESCRIPT="unset XDEBUG_TRIGGER ; ${MYINLINESCRIPT}"
+fi
+if [ -n "$XDEBUG_SESSION" ]; then
+    MYINLINESCRIPT="export XDEBUG_SESSION=${XDEBUG_SESSION@Q} ; ${MYINLINESCRIPT}"
+elif [ "${XDEBUG_SESSION-$DSBLIB_NOTSET}" != "$DSBLIB_NOTSET" ]; then
+    MYINLINESCRIPT="unset XDEBUG_SESSION ; ${MYINLINESCRIPT}"
+fi
+if [ -n "$PHP_IDE_CONFIG" ]; then
+    MYINLINESCRIPT="export PHP_IDE_CONFIG=${PHP_IDE_CONFIG@Q} ; ${MYINLINESCRIPT}"
+elif [ "${PHP_IDE_CONFIG-$DSBLIB_NOTSET}" != "$DSBLIB_NOTSET" ]; then
+    MYINLINESCRIPT="unset PHP_IDE_CONFIG ; ${MYINLINESCRIPT}"    
+fi
+
+dsb_run_as_user  "@PHP" sh -c "dsbnop:$MYINLINESCRIPT" "dsbnop:$DSB_SCRIPT_NAME" "$@"
+# Note: the 'dsbnop:' prefix disables file path mapping in the parameter

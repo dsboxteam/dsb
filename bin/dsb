@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+#
+#  'dsb' utility
+
+set -e
+
+DSBLIB_TEMP="$( declare -F )"
+if [ -n "$DSBLIB_TEMP" ]; then
+    DSBLIB_TEMP_EOL=$'\n'
+    DSBLIB_TEMP_LINE=
+    while [ "$DSBLIB_TEMP_LINE" != "$DSBLIB_TEMP" ]; do
+        DSBLIB_TEMP_LINE="${DSBLIB_TEMP%%${DSBLIB_TEMP_EOL}*}"
+        DSBLIB_TEMP="${DSBLIB_TEMP#*${DSBLIB_TEMP_EOL}}"
+        unset "${DSBLIB_TEMP_LINE##* }"
+    done
+fi
+
+# Include common functions and variables:
+case "$OSTYPE" in
+    linux* )
+        if ! hash readlink 2>/dev/null ; then
+            echo -e "${0##*/}: Сommand 'readlink' not found - EXECUTION ABORTED" 1>&2
+            exit 100
+        fi
+        DSBLIB_TEMP="$( readlink -f "${BASH_SOURCE[0]}" )"
+        ;;
+    darwin*  ) # OSX
+        if ! hash greadlink 2>/dev/null ; then
+            echo -e "${0##*/}: Сommand 'greadlink' not found\nPlease install GNU coreutils package (brew install coreutils)\nEXECUTION ABORTED" 1>&2
+            exit 100
+        fi
+        DSBLIB_TEMP="$( greadlink -f "${BASH_SOURCE[0]}" )"
+        ;;
+    bsd* ) # BSD
+        if ! hash greadlink 2>/dev/null ; then
+            echo -e "${0##*/}: Сommand 'greadlink' not found\nPlease install GNU coreutils package (pkg install coreutils)\nEXECUTION ABORTED" 1>&2
+            exit 100
+        fi
+        DSBLIB_TEMP="$( greadlink -f "${BASH_SOURCE[0]}" )"
+        ;;
+    # solaris* ) # SOLARIS
+    *)
+        echo -e "${0##*/}: Unsupported OS Type: $OSTYPE - EXECUTION ABORTED" 1>&2
+        exit 100
+        ;;
+esac
+DSBLIB_TEMP="${DSBLIB_TEMP%/*}"
+. "${DSBLIB_TEMP%/*}/lib/dsblib.bash"
+
+if [ -z "$DSBLIB_LIB_OK" ]; then
+    echo -e "${0##*/}: dsblib.bash is not active - EXECUTION ABORTED" 1>&2
+    exit 100
+fi
+
+dsb_run_dsb "$@"
