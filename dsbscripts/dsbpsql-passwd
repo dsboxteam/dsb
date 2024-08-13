@@ -1,0 +1,29 @@
+#!/usr/bin/env dsb-script
+#
+#  Change PostgreSQL role's password
+
+declare MYROLE=
+declare MYPASWD=
+declare MYPASWD2=
+
+dsb_message "\nEnter PostgreSQL role's name:"
+read MYROLE
+MYROLE="$( echo $MYROLE )"  # trim
+
+if [ -z "$MYROLE" ]; then
+    dsb_error_exit "No role name supplied"
+fi
+
+dsb_message "\nEnter new role's password:"
+read -s MYPASWD
+dsb_message "Retype new role's password:"
+read -s MYPASWD2
+
+if [ "$MYPASWD" != "$MYPASWD2" ]; then
+    dsb_error_exit "Passwords do not match"
+fi
+if [ -z "$MYPASWD" ]; then
+    dsb_error_exit "No password supplied"
+fi
+
+dsb_run_command "@POSTGRES" postgres psql -c "ALTER ROLE "'"'"$MYROLE"'"'" WITH PASSWORD '$MYPASWD';"

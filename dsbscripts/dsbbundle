@@ -1,0 +1,2 @@
+#!/usr/bin/env dsb-script
+dsb_run_as_user "@RUBY" bundle "$@"

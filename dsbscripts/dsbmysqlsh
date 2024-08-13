@@ -1,0 +1,3 @@
+#!/usr/bin/env dsb-script
+dsb_resolve_files sql js py
+dsb_run_as_user "@MYSQL" mysqlsh "$@"

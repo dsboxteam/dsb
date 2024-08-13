@@ -1,0 +1,44 @@
+#!/usr/bin/env dsb-script
+
+dsb_get_container_id  "@PHP"  # get $DSB_OUT_CONTAINER_ID & $DSB_OUT_CONTAINER_SERVICE
+
+declare    MYINLINESCRIPT='
+if hash php 2>/dev/null ; then
+    exec php "$@"
+fi
+echo "'$DSB_SCRIPT_NAME': '$DSB_OUT_CONTAINER_SERVICE': '"'"'php'"'"' not found in the container" 1>&2
+exit 127
+'
+
+if [ -n "$XDEBUG_CONFIG" ]; then
+    MYINLINESCRIPT="export XDEBUG_CONFIG=${XDEBUG_CONFIG@Q} ; ${MYINLINESCRIPT}"
+elif [ "${XDEBUG_CONFIG-$DSBLIB_NOTSET}" != "$DSBLIB_NOTSET" ]; then
+    MYINLINESCRIPT="unset XDEBUG_CONFIG ; ${MYINLINESCRIPT}"
+fi
+if [ -n "$XDEBUG_TRIGGER" ]; then
+    MYINLINESCRIPT="export XDEBUG_TRIGGER=${XDEBUG_TRIGGER@Q} ; ${MYINLINESCRIPT}"
+elif [ "${XDEBUG_TRIGGER-$DSBLIB_NOTSET}" != "$DSBLIB_NOTSET" ]; then
+    MYINLINESCRIPT="unset XDEBUG_TRIGGER ; ${MYINLINESCRIPT}"
+fi
+if [ -n "$XDEBUG_SESSION" ]; then
+    MYINLINESCRIPT="export XDEBUG_SESSION=${XDEBUG_SESSION@Q} ; ${MYINLINESCRIPT}"
+elif [ "${XDEBUG_SESSION-$DSBLIB_NOTSET}" != "$DSBLIB_NOTSET" ]; then
+    MYINLINESCRIPT="unset XDEBUG_SESSION ; ${MYINLINESCRIPT}"
+fi
+if [ -n "$PHP_IDE_CONFIG" ]; then
+    MYINLINESCRIPT="export PHP_IDE_CONFIG=${PHP_IDE_CONFIG@Q} ; ${MYINLINESCRIPT}"
+elif [ "${PHP_IDE_CONFIG-$DSBLIB_NOTSET}" != "$DSBLIB_NOTSET" ]; then
+    MYINLINESCRIPT="unset PHP_IDE_CONFIG ; ${MYINLINESCRIPT}"    
+fi
+
+####### PhpStorm /tmp/ide-phpinfo.php workaround:
+declare -r MYIDEPHPINFO="/tmp/ide-phpinfo.php"
+if [ "$#" -gt 0  -a  "${@:${#@}}" = "$MYIDEPHPINFO" ] && [ -f "$MYIDEPHPINFO" ]; then
+    chmod a+r "$MYIDEPHPINFO"
+    docker cp -a "$MYIDEPHPINFO" "${DSB_OUT_CONTAINER_ID}:${MYIDEPHPINFO}"
+fi
+#######
+
+dsb_resolve_files  php
+dsb_run_as_user  "@PHP" sh -c "dsbnop:$MYINLINESCRIPT" "dsbnop:$DSB_SCRIPT_NAME" "$@"
+# Note: the 'dsbnop:' prefix disables file path mapping in the parameter
