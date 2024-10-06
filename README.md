@@ -488,8 +488,8 @@ Commands can be executed directly on the container's command line:
 
 When entering the container, a prompt appears (`py:/dsbspace$`),
 containing the name of the service and the current directory. In our case, the current
-directory is `/dsbspace` since the command line call was
-implemented directly from the mounted directory.
+directory is `/dsbspace` because the command line call was
+made directly from the mounted directory.
 
 If the command line is invoked from a subdirectory of the mounted directory,
 in the container, we also get into the corresponding subdirectory:
@@ -530,8 +530,7 @@ Remove all project containers and named volumes:
 
 ### Dsb script contents
 
-At the end of the review, consider the contents of the Dsb script
-`dsbpython`:
+Finally, consider the contents of the Dsb script `dsbpython`:
 
     #!/usr/bin/env dsb-script
     dsb_resolve_files py
@@ -554,8 +553,7 @@ As you can see, everything is quite simple.
 The strings `@PYTHON` and `@NODE` are replaced on execution with the names of the services,
 extracted from the variables `DSB_SERVICE_PYTHON` and `DSB_SERVICE_NODE`
 in the `.dsb/compose/.dsbenv` file (see: [service-aliases](#service-aliases)).
-The string `"$@"` is used in Bash to denote a list of positional parameters
-Dsb script.
+The string `"$@"` is used in Bash to denote a list of positional parameters of the Dsb script.
 
 > To run container commands in root mode,
 you can use the Dsb function [`dsb_run_as_root`](#dsb_run_as_root).
